@@ -1,17 +1,12 @@
 {
   "name": "GATE 2027 Lecture Tracker",
-  "short_name": "GATE 2027",
-  "description": "GATE 2027 lecture progress, timeline and urgent alerts",
-  "start_url": "./",
-  "scope": "./",
+  "short_name": "GATE Tracker",
+  "id": "/GATE-2027-Lecture-Tracker/",
+  "start_url": "/GATE-2027-Lecture-Tracker/",
+  "scope": "/GATE-2027-Lecture-Tracker/",
   "display": "standalone",
-  "display_override": [
-    "window-controls-overlay",
-    "standalone"
-  ],
-  "background_color": "#f4f6fb",
+  "background_color": "#f1f5f9",
   "theme_color": "#0f172a",
-  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "icons/icon-192.png",

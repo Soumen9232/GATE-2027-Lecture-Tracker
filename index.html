@@ -1,197 +1,32 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0f172a">
-<meta name="description" content="GATE 2027 lecture progress tracker with timeline and urgent alerts">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icons/icon-192.png">
-<title>GATE 2027 • Lecture Tracker</title>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f172a"><link rel="manifest" href="manifest.json"><link rel="icon" href="icons/icon-192.png"><title>GATE 2027 • Lecture Tracker</title>
 <style>
-:root{--bg:#f4f6fb;--card:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#2563eb;--good:#16a34a;--warn:#f59e0b;--danger:#dc2626}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-header{background:#0f172a;color:#fff;padding:24px 18px 20px;position:sticky;top:0;z-index:5}
-h1{margin:0;font-size:27px}header p{margin:6px 0 0;color:#cbd5e1}
-main{max-width:1050px;margin:auto;padding:16px}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 2px 8px #00000008}
-.big{font-size:32px;font-weight:800}.muted{color:var(--muted)}.danger{color:var(--danger)}.good{color:var(--good)}
-section{margin:14px 0}.section-title{font-size:21px;font-weight:750;margin:8px 2px 12px}
-.controls{display:flex;gap:9px;flex-wrap:wrap;align-items:center}button,input,select{font:inherit}button{border:0;border-radius:12px;padding:11px 14px;background:#e2e8f0;color:#0f172a;font-weight:650;cursor:pointer}button.primary{background:var(--accent);color:white}button.danger{background:#fee2e2;color:#991b1b}button:active{transform:scale(.98)}
-input,select{border:1px solid var(--line);border-radius:10px;padding:9px;background:white}
-.subject{margin-bottom:14px}.row{display:flex;justify-content:space-between;gap:10px;align-items:center}.title{font-weight:750;font-size:18px}.bar{height:9px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin:9px 0}.fill{height:100%;background:var(--accent)}
-.lectures{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.lec{min-height:45px;padding:8px 4px}.lec.done{background:#dcfce7;color:#166534}.lec.current{outline:3px solid #f59e0b;background:#fffbeb}
-.timeline{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}.day{padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff}.day.today{border-color:var(--accent);box-shadow:0 0 0 2px #2563eb22}.day.over{background:#fff1f2}.day .date{font-weight:750}.day .target{font-size:13px;margin-top:4px}.day button{width:100%;padding:7px;margin-top:8px}
-.alert{border-left:5px solid var(--warn);background:#fffbeb;padding:12px;border-radius:12px}.urgent{border-left-color:var(--danger);background:#fef2f2}
-details{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px}summary{font-weight:750;cursor:pointer}
-small{color:var(--muted)}
-@media(max-width:700px){.grid{grid-template-columns:1fr 1fr}.timeline{grid-template-columns:repeat(2,1fr)}.lectures{grid-template-columns:repeat(5,1fr)}h1{font-size:24px}.card{padding:15px}}
-@media(max-width:430px){.grid{grid-template-columns:1fr 1fr}.lectures{gap:6px}.lec{min-height:42px;font-size:14px}}
-</style>
-</head>
-<body>
-<header><h1>GATE 2027 • Lecture Tracker</h1><p id="subtitle"></p></header>
-<main>
-<section class="grid">
-<div class="card"><div class="big" id="completed">0</div><div class="muted">completed</div></div>
-<div class="card"><div class="big" id="remaining">0</div><div class="muted">remaining</div></div>
-<div class="card"><div class="big" id="overall">0%</div><div class="muted">overall</div></div>
-</section>
-
-<section class="card">
-<div class="row"><div><div class="section-title" style="margin:0">Today</div><div class="muted" id="todayText"></div></div>
-<button id="installBtn" class="primary" style="display:none">Install app</button></div>
-<div style="margin-top:14px" class="controls">
-<label>Daily target <input id="dailyTarget" type="number" min="1" max="30" style="width:80px"></label>
-<span id="todayCount" class="muted"></span>
-<button id="resetToday">Reset today's marks</button>
-</div>
-<div id="status" style="margin-top:12px"></div>
-</section>
-
-<section>
-<div class="section-title">Timeline</div>
-<div class="card">
-<div class="row"><span><b id="timelineSummary"></b></span><span class="muted">Aug 11 → Sep 30, 2026</span></div>
-<div class="timeline" id="timeline" style="margin-top:12px"></div>
-</div>
-</section>
-
-<section>
-<div class="section-title">Alerts</div>
-<div class="card">
-<div class="controls">
-<button id="notifyBtn" class="primary">Enable notifications</button>
-<button id="beepBtn">Test urgent beep</button>
-</div>
-<p class="muted">The app can show an urgent warning and beep when you are behind today's target. Browser notifications require permission.</p>
-<div id="alertBox"></div>
-</div>
-</section>
-
-<section>
-<div class="section-title">Subjects</div>
-<div id="subjects"></div>
-</section>
-
-<section>
-<details><summary>Edit subject totals / progress</summary>
-<p class="muted">CN is configured exactly as requested: lecture 37 is the current point, with 48 lectures remaining (85 total). Algorithms is a separate 40-lecture subject. Edit other subjects here if your actual syllabus differs.</p>
-<div id="editor"></div>
-</details>
-</section>
-</main>
-
+:root{--bg:#f1f5f9;--card:#fff;--text:#0f172a;--muted:#64748b;--blue:#2563eb;--green:#16a34a;--red:#dc2626;--line:#e2e8f0}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}header{background:#0f172a;color:white;padding:22px 16px;position:sticky;top:0;z-index:5}h1{margin:0;font-size:25px}main{max-width:950px;margin:auto;padding:14px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px #0000000a}.stat b{font-size:34px;display:block}.stat span,.muted{color:var(--muted)}h2{margin:0 0 12px;font-size:20px}.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}button,input{font:inherit}button{border:0;border-radius:11px;padding:10px 13px;background:#e2e8f0;cursor:pointer;font-weight:650}button.primary{background:var(--blue);color:white}button.danger{background:#fee2e2;color:#991b1b}button.success{background:#dcfce7;color:#166534}input{border:1px solid #cbd5e1;border-radius:9px;padding:9px;background:white}.progress,.timeline{height:11px;background:#e2e8f0;border-radius:20px;overflow:hidden}.bar{height:100%;background:var(--blue)}.timeline .bar{background:var(--green)}.subject{border-top:1px solid var(--line);padding:15px 0}.subject:first-child{border:0;padding-top:0}.pill{background:#dbeafe;color:#1d4ed8;border-radius:999px;padding:4px 8px;font-size:12px}.subjectHead{display:flex;justify-content:space-between}.lectureGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(48px,1fr));gap:6px;margin-top:10px}.lectureGrid button{padding:9px 2px}.lectureGrid .done{background:#dcfce7;color:#166534;text-decoration:line-through}.lectureGrid .next{outline:3px solid #bfdbfe}.alert{margin-top:10px;padding:11px;border-radius:10px;background:#fff7ed;color:#9a3412}.good{background:#f0fdf4;color:#166534}.bad{background:#fef2f2;color:#991b1b}@media(max-width:650px){.grid{grid-template-columns:1fr 1fr}.stat b{font-size:30px}}@media(max-width:430px){.grid{grid-template-columns:1fr}}
+</style></head><body>
+<header><h1>GATE 2027 • Lecture Tracker</h1><div id="head" class="muted"></div></header><main>
+<div class="grid"><div class="card stat"><b id="done">0</b><span>completed</span></div><div class="card stat"><b id="left">0</b><span>remaining</span></div><div class="card stat"><b id="pct">0%</b><span>overall</span></div></div>
+<div class="card"><h2>Today</h2><div class="row"><label>Daily target <input id="target" type="number" min="1" max="30" style="width:90px"></label><label>Date <input id="today" type="date"></label></div><p id="todayInfo" class="muted"></p><button id="resetToday">Reset today's marks</button></div>
+<div class="card"><h2>Timeline</h2><div class="row"><label>Phase deadline <input id="deadline" type="date"></label><label>GATE target <input id="gate" type="date"></label></div><p id="timeline" class="muted"></p><div class="timeline"><div id="tbar" class="bar" style="width:0"></div></div><div id="pace"></div></div>
+<div class="card"><h2>Alerts</h2><div class="row"><button class="primary" id="notify">Enable notifications</button><button id="beep">Test urgent beep</button><button id="remind">Set reminder</button></div><p class="muted">Notifications need permission. Beep/reminders work while this app is running; guaranteed background alarms require a native/push service.</p><div id="status"></div></div>
+<div class="card"><div class="row between"><h2>Subjects</h2><button class="primary" id="add">+ Add subject</button></div><div id="subjects"></div></div>
+<div class="card"><h2>Backup</h2><div class="row"><button id="export">Export backup</button><label>Import <input id="import" type="file" accept=".json"></label><button class="danger" id="resetAll">Reset all</button></div><p class="muted">Export regularly so progress survives browser/app storage being cleared.</p></div>
+</main><footer class="muted" style="text-align:center;padding:25px">GATE Tracker v3</footer>
 <script>
-const START='2026-08-11', END='2026-09-30';
-const DEFAULT=[
- {name:'Computer Networks', total:85, completed:37},
- {name:'Algorithms', total:40, completed:0},
- {name:'Operating Systems', total:44, completed:0},
- {name:'DBMS', total:40, completed:0},
- {name:'C + Data Structures', total:40, completed:0},
- {name:'Theory of Computation', total:40, completed:0},
- {name:'Compiler Design', total:40, completed:0},
- {name:'Digital Logic', total:40, completed:0},
- {name:'Computer Organization & Architecture', total:40, completed:0},
- {name:'Discrete Mathematics', total:40, completed:0},
- {name:'Engineering Mathematics + Aptitude', total:40, completed:0}
-];
-const KEY='gate2027-v2-state';
-let state=JSON.parse(localStorage.getItem(KEY)||'null')||{
- subjects:DEFAULT.map(x=>({...x})), dailyTarget:8, marks:{}, notifications:false
-};
-function save(){localStorage.setItem(KEY,JSON.stringify(state))}
-function d0(s){return new Date(s+'T00:00:00')}
-function iso(d){return d.toISOString().slice(0,10)}
-function clamp(n,a,b){return Math.max(a,Math.min(b,n))}
-function allCompleted(){return state.subjects.reduce((a,s)=>a+s.completed,0)}
-function allTotal(){return state.subjects.reduce((a,s)=>a+s.total,0)}
-function remaining(){return allTotal()-allCompleted()}
-function daysLeft(){let now=d0(iso(new Date())), end=d0(END); return Math.max(1,Math.ceil((end-now)/86400000)+1)}
-function targetForPlan(){return Math.ceil(remaining()/daysLeft())}
-function marksToday(){return state.marks[iso(new Date())]||0}
-function setStatus(){
- const rem=remaining(), need=targetForPlan(), done=marksToday(), target=Number(state.dailyTarget);
- let html='';
- if(done<target) html=`<div class="alert ${done+2<target?'urgent':''}"><b>${target-done} lectures left for today's target.</b> Keep going — today's plan is ${target}.</div>`;
- else html='<div class="alert" style="border-left-color:var(--good);background:#f0fdf4"><b>Today's target complete 🎉</b></div>';
- document.getElementById('status').innerHTML=html;
- document.getElementById('todayCount').textContent=`${done} / ${target} today`;
- document.getElementById('timelineSummary').textContent=`${rem} remaining • plan needs about ${need}/day`;
-}
-function render(){
- const total=allTotal(), comp=allCompleted(), rem=total-comp, pct=total?Math.round(comp/total*100):0;
- document.getElementById('completed').textContent=comp;
- document.getElementById('remaining').textContent=rem;
- document.getElementById('overall').textContent=pct+'%';
- document.getElementById('subtitle').textContent=`${total} lectures • Aug 11 → Sep 30`;
- document.getElementById('todayText').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric',year:'numeric'});
- document.getElementById('dailyTarget').value=state.dailyTarget;
- renderTimeline(); renderSubjects(); renderEditor(); setStatus();
-}
-function renderTimeline(){
- const el=document.getElementById('timeline'); el.innerHTML='';
- for(let t=d0(START);t<=d0(END);t.setDate(t.getDate()+1)){
-   const key=iso(t), today=key===iso(new Date()), done=state.marks[key]||0;
-   const box=document.createElement('div'); box.className='day'+(today?' today':'')+(key<iso(new Date())&&done<state.dailyTarget?' over':'');
-   box.innerHTML=`<div class="date">${t.toLocaleDateString(undefined,{month:'short',day:'numeric'})}</div><div class="target">${done}/${state.dailyTarget} lectures</div>`;
-   const b=document.createElement('button'); b.textContent='+1'; b.onclick=()=>{state.marks[key]=(state.marks[key]||0)+1;save();render();};
-   box.appendChild(b);el.appendChild(box);
- }
-}
-function renderSubjects(){
- const el=document.getElementById('subjects');el.innerHTML='';
- state.subjects.forEach((s,si)=>{
-   const pct=s.total?Math.round(s.completed/s.total*100):0;
-   const wrap=document.createElement('div');wrap.className='card subject';
-   wrap.innerHTML=`<div class="row"><div><div class="title">${s.name}</div><small>${s.completed} completed • ${s.total-s.completed} left • ${s.total} total</small></div><b>${pct}%</b></div><div class="bar"><div class="fill" style="width:${pct}%"></div></div><div class="lectures"></div>`;
-   const grid=wrap.querySelector('.lectures');
-   for(let i=1;i<=s.total;i++){
-     const b=document.createElement('button');b.className='lec'+(i<=s.completed?' done':'')+(i===s.completed+1?' current':'');b.textContent=i;
-     b.title=i<=s.completed?'Completed':'Mark lecture '+i+' completed';
-     b.onclick=()=>{s.completed= i<=s.completed ? i-1 : i; save(); render();};
-     grid.appendChild(b);
-   }
-   el.appendChild(wrap);
- });
-}
-function renderEditor(){
- const el=document.getElementById('editor');el.innerHTML='';
- state.subjects.forEach((s,i)=>{
-   const row=document.createElement('div');row.style='display:grid;grid-template-columns:1fr 90px 90px;gap:8px;margin:8px 0';
-   row.innerHTML=`<input value="${s.name}"><input type="number" min="1" value="${s.total}"><input type="number" min="0" value="${s.completed}">`;
-   const [n,t,c]=row.querySelectorAll('input');
-   [n,t,c].forEach(x=>x.onchange=()=>{s.name=n.value;s.total=Math.max(1,Number(t.value));s.completed=clamp(Number(c.value),0,s.total);save();render();});
-   el.appendChild(row);
- });
- const add=document.createElement('button');add.textContent='Add subject';add.onclick=()=>{state.subjects.push({name:'New Subject',total:40,completed:0});save();render()};el.appendChild(add);
-}
-document.getElementById('dailyTarget').onchange=e=>{state.dailyTarget=clamp(Number(e.target.value)||8,1,30);save();render()};
-document.getElementById('resetToday').onclick=()=>{delete state.marks[iso(new Date())];save();render()};
-document.getElementById('notifyBtn').onclick=async()=>{
- if(!('Notification'in window)){alert('Notifications are not supported in this browser.');return}
- const p=await Notification.requestPermission(); state.notifications=p==='granted';save();
- alert(p==='granted'?'Notifications enabled.':'Notification permission was not granted.');
-};
-let audioCtx;
-function beep(){
- try{audioCtx ||= new (window.AudioContext||window.webkitAudioContext)(); const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=880;g.gain.setValueAtTime(.001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.18,audioCtx.currentTime+.02);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.45);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.5)}catch(e){}
-}
-document.getElementById('beepBtn').onclick=()=>beep();
-setInterval(()=>{
- const done=marksToday(), target=Number(state.dailyTarget);
- if(done<target && state.notifications && Notification.permission==='granted'){
-   const last=localStorage.getItem('gate-alert-day');
-   if(last!==iso(new Date())){new Notification('GATE 2027 — urgent',{body:`${target-done} lectures still needed today.`});localStorage.setItem('gate-alert-day',iso(new Date()));beep();}
- }
-},60000);
-
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('installBtn').style.display='block'});
-document.getElementById('installBtn').onclick=async()=>{if(deferredPrompt){deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;document.getElementById('installBtn').style.display='none'}};
-if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.error);
-render();
-</script>
-</body>
-</html>
+const K="gateTrackerV3",D={target:8,deadline:"2026-09-30",gate:"2027-02-07",subjects:[
+{id:"cn",name:"Computer Networks",total:85,completed:37},{id:"algo",name:"Algorithms",total:40,completed:0},{id:"os",name:"Operating Systems",total:40,completed:0},{id:"dbms",name:"DBMS",total:35,completed:0},{id:"toc",name:"Theory of Computation",total:35,completed:0},{id:"cd",name:"Compiler Design",total:30,completed:0},{id:"coa",name:"Computer Organization & Architecture",total:40,completed:0},{id:"dm",name:"Discrete Mathematics",total:40,completed:0},{id:"ds",name:"Data Structures",total:35,completed:0},{id:"c",name:"C Programming",total:25,completed:0},{id:"apt",name:"Engineering Mathematics / Aptitude",total:30,completed:0}],marks:{},reminders:[]};
+let d=JSON.parse(localStorage.getItem(K)||"null")||D;const $=x=>document.getElementById(x),save=()=>localStorage.setItem(K,JSON.stringify(d)),todayISO=()=>new Date().toISOString().slice(0,10);
+function totals(){return[d.subjects.reduce((a,s)=>a+s.completed,0),d.subjects.reduce((a,s)=>a+s.total,0)]}
+function render(){let[c,t]=totals(),r=t-c,p=t?Math.round(c/t*100):0;$("done").textContent=c;$("left").textContent=r;$("pct").textContent=p+"%";$("head").textContent=`${t} planned • ${c} completed • ${r} remaining`;$("target").value=d.target;$("deadline").value=d.deadline;$("gate").value=d.gate;if(!$("today").value)$("today").value=todayISO();let m=d.marks[$("today").value]||[];$("todayInfo").textContent=`${m.length} / ${d.target} today`;renderTimeline(c,t);renderSubjects();$("status").textContent=("Notification"in window)?`Notification permission: ${Notification.permission}`:"Notifications unavailable"}
+function renderTimeline(c,t){let now=new Date(),start=new Date("2026-08-11"),end=new Date(d.deadline),days=Math.max(1,Math.ceil((end-now)/864e5)+1),all=Math.max(1,Math.ceil((end-start)/864e5)+1),elapsed=Math.max(0,Math.min(all,Math.ceil((now-start)/864e5)+1)),expected=Math.min(t,Math.round(t*elapsed/all)),ahead=c-expected,need=Math.ceil(Math.max(0,t-c)/days);$("timeline").textContent=`Aug 11 → ${d.deadline} • ${days} day(s) left • about ${need}/day needed. GATE target: ${d.gate}`;$("tbar").style.width=(t?c/t*100:0)+"%";$("pace").className="alert "+(ahead>=0?"good":"bad");$("pace").textContent=ahead>=0?`Ahead of phase pace by about ${ahead} lecture(s).`:`Behind phase pace by about ${-ahead} lecture(s).`}
+function renderSubjects(){let box=$("subjects");box.innerHTML="";d.subjects.forEach((s,i)=>{let pct=s.total?Math.round(s.completed/s.total*100):0,el=document.createElement("div");el.className="subject";el.innerHTML=`<div class="subjectHead"><div><h3>${s.name}</h3><span class="muted">${s.completed}/${s.total} completed • ${s.total-s.completed} remaining</span></div><span class="pill">${pct}%</span></div><div class="progress"><div class="bar" style="width:${pct}%"></div></div><div class="row" style="margin-top:8px"><button data-a="minus" data-i="${i}">−1</button><button class="success" data-a="plus" data-i="${i}">+1</button><button data-a="edit" data-i="${i}">Edit total</button><button class="danger" data-a="del" data-i="${i}">Delete</button></div><details><summary>Lecture checklist</summary><div class="lectureGrid" id="g${s.id}"></div></details>`;box.appendChild(el);let g=el.querySelector("#g"+s.id);for(let n=1;n<=s.total;n++){let b=document.createElement("button");b.textContent=n;b.dataset.a="lec";b.dataset.i=i;b.dataset.n=n;if(n<=s.completed)b.className="done";if(n==s.completed+1)b.className="next";g.appendChild(b)}})}
+$("subjects").onclick=e=>{let b=e.target.closest("button");if(!b)return;let i=+b.dataset.i,s=d.subjects[i],a=b.dataset.a;if(a=="plus")s.completed=Math.min(s.total,s.completed+1);if(a=="minus")s.completed=Math.max(0,s.completed-1);if(a=="lec"){let n=+b.dataset.n;s.completed=n<=s.completed?n-1:n}if(a=="edit"){let n=+prompt("Total lectures",s.total);if(n>0)s.total=n;s.completed=Math.min(s.completed,s.total)}if(a=="del"&&confirm("Delete "+s.name+"?"))d.subjects.splice(i,1);save();render()};
+$("add").onclick=()=>{let n=prompt("Subject name");if(!n)return;let t=+prompt("Total lectures",40);if(t>0){d.subjects.push({id:"s"+Date.now(),name:n,total:t,completed:0});save();render()}};
+$("target").onchange=()=>{d.target=Math.max(1,+$("target").value||8);save();render()};$("deadline").onchange=()=>{d.deadline=$("deadline").value;save();render()};$("gate").onchange=()=>{d.gate=$("gate").value;save();render()};$("today").onchange=render;$("resetToday").onclick=()=>{delete d.marks[$("today").value];save();render()};
+function sound(){let A=window.AudioContext||window.webkitAudioContext;if(!A)return;let c=new A,o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=.12;o.start();setTimeout(()=>o.frequency.value=660,160);setTimeout(()=>o.stop(),400)}$("beep").onclick=sound;
+$("notify").onclick=async()=>{if(!("Notification"in window))return alert("Notifications are not supported here.");let p=await Notification.requestPermission();render();if(p=="granted")new Notification("GATE Tracker",{body:"Notifications enabled."})};
+$("remind").onclick=()=>{let m=+prompt("Reminder after how many minutes?",60);if(m>0){d.reminders.push(Date.now()+m*60000);save();alert("Saved. Keep the app/browser active for the reminder.");}};
+setInterval(()=>{let n=Date.now(),keep=[];for(let x of d.reminders){if(n>=x){if("Notification"in window&&Notification.permission=="granted")new Notification("GATE Tracker",{body:"Study reminder: complete today's target."});sound()}else keep.push(x)}d.reminders=keep;save()},10000);
+$("export").onclick=()=>{let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:"application/json"}));a.download="gate-tracker-backup.json";a.click()};
+$("import").onchange=e=>{let f=e.target.files[0],r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!x.subjects)throw 0;d=x;save();render();alert("Backup imported.")}catch{alert("Invalid backup.")}};if(f)r.readAsText(f)};
+$("resetAll").onclick=()=>{if(confirm("Reset all progress? Export first if needed.")){d=structuredClone(D);save();render()}};
+render();if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js");
+</script></body></html>
