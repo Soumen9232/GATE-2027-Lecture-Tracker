@@ -1,54 +1,197 @@
 <!doctype html>
-<html><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#111827"><link rel="manifest" href="manifest.json">
-<title>GATE 2027 Lecture Tracker</title>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<meta name="description" content="GATE 2027 lecture progress tracker with timeline and urgent alerts">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<title>GATE 2027 • Lecture Tracker</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:#f5f7fb;color:#111827}
-header{background:#111827;color:white;padding:20px 16px;position:sticky;top:0;z-index:2}h1{font-size:21px;margin:0 0 3px}.sub{opacity:.75;font-size:12px}
-main{max-width:720px;margin:auto;padding:14px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.stat,.panel{background:white;border:1px solid #e5e7eb;border-radius:15px}.stat{padding:12px;text-align:center}.stat b{display:block;font-size:21px}.stat span,.meta,.small{font-size:11px;color:#6b7280}
-.panel{padding:14px;margin-top:12px}.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
-button{border:0;border-radius:9px;padding:9px 11px;font-weight:650}button.secondary{background:#eef0f3}.danger{background:#fee2e2;color:#991b1b}
-input{width:65px;padding:8px;border:1px solid #ddd;border-radius:8px}.subject{border-top:1px solid #eee;padding:14px 0}.subject:first-child{border-top:0}
-.title{font-weight:750}.progress{height:7px;background:#edf0f3;border-radius:99px;margin:8px 0}.bar{height:100%;background:#111827;border-radius:99px}
-.lectures{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.lecture{background:#f1f3f5;border:1px solid #e5e7eb}.lecture.done{background:#dcfce7;color:#166534;text-decoration:line-through}
-footer{text-align:center;color:#777;font-size:11px;padding:15px}
-</style></head>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#2563eb;--good:#16a34a;--warn:#f59e0b;--danger:#dc2626}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:#0f172a;color:#fff;padding:24px 18px 20px;position:sticky;top:0;z-index:5}
+h1{margin:0;font-size:27px}header p{margin:6px 0 0;color:#cbd5e1}
+main{max-width:1050px;margin:auto;padding:16px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 2px 8px #00000008}
+.big{font-size:32px;font-weight:800}.muted{color:var(--muted)}.danger{color:var(--danger)}.good{color:var(--good)}
+section{margin:14px 0}.section-title{font-size:21px;font-weight:750;margin:8px 2px 12px}
+.controls{display:flex;gap:9px;flex-wrap:wrap;align-items:center}button,input,select{font:inherit}button{border:0;border-radius:12px;padding:11px 14px;background:#e2e8f0;color:#0f172a;font-weight:650;cursor:pointer}button.primary{background:var(--accent);color:white}button.danger{background:#fee2e2;color:#991b1b}button:active{transform:scale(.98)}
+input,select{border:1px solid var(--line);border-radius:10px;padding:9px;background:white}
+.subject{margin-bottom:14px}.row{display:flex;justify-content:space-between;gap:10px;align-items:center}.title{font-weight:750;font-size:18px}.bar{height:9px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin:9px 0}.fill{height:100%;background:var(--accent)}
+.lectures{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.lec{min-height:45px;padding:8px 4px}.lec.done{background:#dcfce7;color:#166534}.lec.current{outline:3px solid #f59e0b;background:#fffbeb}
+.timeline{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}.day{padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff}.day.today{border-color:var(--accent);box-shadow:0 0 0 2px #2563eb22}.day.over{background:#fff1f2}.day .date{font-weight:750}.day .target{font-size:13px;margin-top:4px}.day button{width:100%;padding:7px;margin-top:8px}
+.alert{border-left:5px solid var(--warn);background:#fffbeb;padding:12px;border-radius:12px}.urgent{border-left-color:var(--danger);background:#fef2f2}
+details{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px}summary{font-weight:750;cursor:pointer}
+small{color:var(--muted)}
+@media(max-width:700px){.grid{grid-template-columns:1fr 1fr}.timeline{grid-template-columns:repeat(2,1fr)}.lectures{grid-template-columns:repeat(5,1fr)}h1{font-size:24px}.card{padding:15px}}
+@media(max-width:430px){.grid{grid-template-columns:1fr 1fr}.lectures{gap:6px}.lec{min-height:42px;font-size:14px}}
+</style>
+</head>
 <body>
-<header><h1>GATE 2027 • Lecture Tracker</h1><div class="sub">373 lectures • Aug 11 → Sep 30</div></header>
+<header><h1>GATE 2027 • Lecture Tracker</h1><p id="subtitle"></p></header>
 <main>
-<section class="stats"><div class="stat"><b id="done">0</b><span>completed</span></div><div class="stat"><b id="left">373</b><span>remaining</span></div><div class="stat"><b id="pct">0%</b><span>overall</span></div></section>
-<section class="panel"><div class="row"><b>Today</b><button class="secondary" onclick="resetToday()">Reset today's marks</button></div>
-<div class="small" id="today"></div><div style="margin-top:9px"><label class="small">Daily target </label><input id="target" type="number" min="1" max="20" value="8" onchange="saveTarget()"> <span class="small" id="todayCount"></span></div></section>
-<section class="panel"><div class="row"><b>Subjects</b><button class="danger" onclick="resetAll()">Reset all</button></div><div id="subjects"></div></section>
-<footer>Progress is saved on this device. No account required.</footer>
+<section class="grid">
+<div class="card"><div class="big" id="completed">0</div><div class="muted">completed</div></div>
+<div class="card"><div class="big" id="remaining">0</div><div class="muted">remaining</div></div>
+<div class="card"><div class="big" id="overall">0%</div><div class="muted">overall</div></div>
+</section>
+
+<section class="card">
+<div class="row"><div><div class="section-title" style="margin:0">Today</div><div class="muted" id="todayText"></div></div>
+<button id="installBtn" class="primary" style="display:none">Install app</button></div>
+<div style="margin-top:14px" class="controls">
+<label>Daily target <input id="dailyTarget" type="number" min="1" max="30" style="width:80px"></label>
+<span id="todayCount" class="muted"></span>
+<button id="resetToday">Reset today's marks</button>
+</div>
+<div id="status" style="margin-top:12px"></div>
+</section>
+
+<section>
+<div class="section-title">Timeline</div>
+<div class="card">
+<div class="row"><span><b id="timelineSummary"></b></span><span class="muted">Aug 11 → Sep 30, 2026</span></div>
+<div class="timeline" id="timeline" style="margin-top:12px"></div>
+</div>
+</section>
+
+<section>
+<div class="section-title">Alerts</div>
+<div class="card">
+<div class="controls">
+<button id="notifyBtn" class="primary">Enable notifications</button>
+<button id="beepBtn">Test urgent beep</button>
+</div>
+<p class="muted">The app can show an urgent warning and beep when you are behind today's target. Browser notifications require permission.</p>
+<div id="alertBox"></div>
+</div>
+</section>
+
+<section>
+<div class="section-title">Subjects</div>
+<div id="subjects"></div>
+</section>
+
+<section>
+<details><summary>Edit subject totals / progress</summary>
+<p class="muted">CN is configured exactly as requested: lecture 37 is the current point, with 48 lectures remaining (85 total). Algorithms is a separate 40-lecture subject. Edit other subjects here if your actual syllabus differs.</p>
+<div id="editor"></div>
+</details>
+</section>
 </main>
+
 <script>
-const SUBJECTS=[{"name": "Computer Networks", "count": 49}, {"name": "Operating Systems", "count": 44}, {"name": "DBMS", "count": 40}, {"name": "C + Data Structures + Algorithms", "count": 40}, {"name": "Theory of Computation", "count": 40}, {"name": "Compiler Design", "count": 40}, {"name": "Digital Logic", "count": 40}, {"name": "Computer Organization & Architecture", "count": 40}, {"name": "Discrete Mathematics", "count": 40}, {"name": "Engineering Mathematics + Aptitude", "count": 40}];
-const KEY="gateTrackerV1", TARGET="gateTrackerTarget";
-let state=JSON.parse(localStorage.getItem(KEY)||"{}"), target=Number(localStorage.getItem(TARGET)||8);
-const k=(s,l)=>s+"-"+l;
-function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}
-function saveTarget(){target=Math.max(1,Math.min(20,Number(document.getElementById("target").value)||8));localStorage.setItem(TARGET,target);render()}
-function toggle(s,l){let x=k(s,l);let was=!!state[x];state[x]=!was;
-let d=new Date().toISOString().slice(0,10), dk="gateDay-"+d, a=JSON.parse(localStorage.getItem(dk)||"[]");
-if(!was&&!a.includes(x))a.push(x);if(was)a=a.filter(y=>y!==x);localStorage.setItem(dk,JSON.stringify(a));save()}
+const START='2026-08-11', END='2026-09-30';
+const DEFAULT=[
+ {name:'Computer Networks', total:85, completed:37},
+ {name:'Algorithms', total:40, completed:0},
+ {name:'Operating Systems', total:44, completed:0},
+ {name:'DBMS', total:40, completed:0},
+ {name:'C + Data Structures', total:40, completed:0},
+ {name:'Theory of Computation', total:40, completed:0},
+ {name:'Compiler Design', total:40, completed:0},
+ {name:'Digital Logic', total:40, completed:0},
+ {name:'Computer Organization & Architecture', total:40, completed:0},
+ {name:'Discrete Mathematics', total:40, completed:0},
+ {name:'Engineering Mathematics + Aptitude', total:40, completed:0}
+];
+const KEY='gate2027-v2-state';
+let state=JSON.parse(localStorage.getItem(KEY)||'null')||{
+ subjects:DEFAULT.map(x=>({...x})), dailyTarget:8, marks:{}, notifications:false
+};
+function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+function d0(s){return new Date(s+'T00:00:00')}
+function iso(d){return d.toISOString().slice(0,10)}
+function clamp(n,a,b){return Math.max(a,Math.min(b,n))}
+function allCompleted(){return state.subjects.reduce((a,s)=>a+s.completed,0)}
+function allTotal(){return state.subjects.reduce((a,s)=>a+s.total,0)}
+function remaining(){return allTotal()-allCompleted()}
+function daysLeft(){let now=d0(iso(new Date())), end=d0(END); return Math.max(1,Math.ceil((end-now)/86400000)+1)}
+function targetForPlan(){return Math.ceil(remaining()/daysLeft())}
+function marksToday(){return state.marks[iso(new Date())]||0}
+function setStatus(){
+ const rem=remaining(), need=targetForPlan(), done=marksToday(), target=Number(state.dailyTarget);
+ let html='';
+ if(done<target) html=`<div class="alert ${done+2<target?'urgent':''}"><b>${target-done} lectures left for today's target.</b> Keep going — today's plan is ${target}.</div>`;
+ else html='<div class="alert" style="border-left-color:var(--good);background:#f0fdf4"><b>Today's target complete 🎉</b></div>';
+ document.getElementById('status').innerHTML=html;
+ document.getElementById('todayCount').textContent=`${done} / ${target} today`;
+ document.getElementById('timelineSummary').textContent=`${rem} remaining • plan needs about ${need}/day`;
+}
 function render(){
-let total=0,done=0;SUBJECTS.forEach((s,i)=>{total+=s.count;for(let l=1;l<=s.count;l++)if(state[k(i,l)])done++});
-document.getElementById("done").textContent=done;document.getElementById("left").textContent=total-done;
-document.getElementById("pct").textContent=Math.round(done/total*100)+"%";document.getElementById("target").value=target;
-let now=new Date();document.getElementById("today").textContent=now.toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric",year:"numeric"});
-let dk="gateDay-"+now.toISOString().slice(0,10),a=JSON.parse(localStorage.getItem(dk)||"[]");
-document.getElementById("todayCount").textContent=a.filter(x=>state[x]).length+" / "+target+" today";
-let box=document.getElementById("subjects");box.innerHTML="";
-SUBJECTS.forEach((s,i)=>{let sd=0;for(let l=1;l<=s.count;l++)if(state[k(i,l)])sd++;let p=Math.round(sd/s.count*100);
-let div=document.createElement("div");div.className="subject";
-div.innerHTML='<div class="row"><div><div class="title">'+s.name+'</div><div class="meta">'+sd+' / '+s.count+' completed • '+(s.count-sd)+' left</div></div><b>'+p+'%</b></div><div class="progress"><div class="bar" style="width:'+p+'%"></div></div><div class="lectures" id="l'+i+'"></div>';
-box.appendChild(div);let grid=div.querySelector("#l"+i);
-for(let l=1;l<=s.count;l++){let b=document.createElement("button");b.className="lecture"+(state[k(i,l)]?" done":"");b.textContent=l;b.onclick=()=>toggle(i,l);grid.appendChild(b)}})}
-function resetToday(){let d=new Date().toISOString().slice(0,10),dk="gateDay-"+d,a=JSON.parse(localStorage.getItem(dk)||"[]");a.forEach(x=>delete state[x]);localStorage.removeItem(dk);save()}
-function resetAll(){if(confirm("Reset all 373 lecture checkmarks?")){state={};localStorage.removeItem(KEY);render()}}
+ const total=allTotal(), comp=allCompleted(), rem=total-comp, pct=total?Math.round(comp/total*100):0;
+ document.getElementById('completed').textContent=comp;
+ document.getElementById('remaining').textContent=rem;
+ document.getElementById('overall').textContent=pct+'%';
+ document.getElementById('subtitle').textContent=`${total} lectures • Aug 11 → Sep 30`;
+ document.getElementById('todayText').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric',year:'numeric'});
+ document.getElementById('dailyTarget').value=state.dailyTarget;
+ renderTimeline(); renderSubjects(); renderEditor(); setStatus();
+}
+function renderTimeline(){
+ const el=document.getElementById('timeline'); el.innerHTML='';
+ for(let t=d0(START);t<=d0(END);t.setDate(t.getDate()+1)){
+   const key=iso(t), today=key===iso(new Date()), done=state.marks[key]||0;
+   const box=document.createElement('div'); box.className='day'+(today?' today':'')+(key<iso(new Date())&&done<state.dailyTarget?' over':'');
+   box.innerHTML=`<div class="date">${t.toLocaleDateString(undefined,{month:'short',day:'numeric'})}</div><div class="target">${done}/${state.dailyTarget} lectures</div>`;
+   const b=document.createElement('button'); b.textContent='+1'; b.onclick=()=>{state.marks[key]=(state.marks[key]||0)+1;save();render();};
+   box.appendChild(b);el.appendChild(box);
+ }
+}
+function renderSubjects(){
+ const el=document.getElementById('subjects');el.innerHTML='';
+ state.subjects.forEach((s,si)=>{
+   const pct=s.total?Math.round(s.completed/s.total*100):0;
+   const wrap=document.createElement('div');wrap.className='card subject';
+   wrap.innerHTML=`<div class="row"><div><div class="title">${s.name}</div><small>${s.completed} completed • ${s.total-s.completed} left • ${s.total} total</small></div><b>${pct}%</b></div><div class="bar"><div class="fill" style="width:${pct}%"></div></div><div class="lectures"></div>`;
+   const grid=wrap.querySelector('.lectures');
+   for(let i=1;i<=s.total;i++){
+     const b=document.createElement('button');b.className='lec'+(i<=s.completed?' done':'')+(i===s.completed+1?' current':'');b.textContent=i;
+     b.title=i<=s.completed?'Completed':'Mark lecture '+i+' completed';
+     b.onclick=()=>{s.completed= i<=s.completed ? i-1 : i; save(); render();};
+     grid.appendChild(b);
+   }
+   el.appendChild(wrap);
+ });
+}
+function renderEditor(){
+ const el=document.getElementById('editor');el.innerHTML='';
+ state.subjects.forEach((s,i)=>{
+   const row=document.createElement('div');row.style='display:grid;grid-template-columns:1fr 90px 90px;gap:8px;margin:8px 0';
+   row.innerHTML=`<input value="${s.name}"><input type="number" min="1" value="${s.total}"><input type="number" min="0" value="${s.completed}">`;
+   const [n,t,c]=row.querySelectorAll('input');
+   [n,t,c].forEach(x=>x.onchange=()=>{s.name=n.value;s.total=Math.max(1,Number(t.value));s.completed=clamp(Number(c.value),0,s.total);save();render();});
+   el.appendChild(row);
+ });
+ const add=document.createElement('button');add.textContent='Add subject';add.onclick=()=>{state.subjects.push({name:'New Subject',total:40,completed:0});save();render()};el.appendChild(add);
+}
+document.getElementById('dailyTarget').onchange=e=>{state.dailyTarget=clamp(Number(e.target.value)||8,1,30);save();render()};
+document.getElementById('resetToday').onclick=()=>{delete state.marks[iso(new Date())];save();render()};
+document.getElementById('notifyBtn').onclick=async()=>{
+ if(!('Notification'in window)){alert('Notifications are not supported in this browser.');return}
+ const p=await Notification.requestPermission(); state.notifications=p==='granted';save();
+ alert(p==='granted'?'Notifications enabled.':'Notification permission was not granted.');
+};
+let audioCtx;
+function beep(){
+ try{audioCtx ||= new (window.AudioContext||window.webkitAudioContext)(); const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=880;g.gain.setValueAtTime(.001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.18,audioCtx.currentTime+.02);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.45);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.5)}catch(e){}
+}
+document.getElementById('beepBtn').onclick=()=>beep();
+setInterval(()=>{
+ const done=marksToday(), target=Number(state.dailyTarget);
+ if(done<target && state.notifications && Notification.permission==='granted'){
+   const last=localStorage.getItem('gate-alert-day');
+   if(last!==iso(new Date())){new Notification('GATE 2027 — urgent',{body:`${target-done} lectures still needed today.`});localStorage.setItem('gate-alert-day',iso(new Date()));beep();}
+ }
+},60000);
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('installBtn').style.display='block'});
+document.getElementById('installBtn').onclick=async()=>{if(deferredPrompt){deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;document.getElementById('installBtn').style.display='none'}};
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.error);
 render();
-if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
-</script></body></html>
+</script>
+</body>
+</html>
