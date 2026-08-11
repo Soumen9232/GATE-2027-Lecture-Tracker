@@ -1,0 +1,54 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827"><link rel="manifest" href="manifest.json">
+<title>GATE 2027 Lecture Tracker</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:#f5f7fb;color:#111827}
+header{background:#111827;color:white;padding:20px 16px;position:sticky;top:0;z-index:2}h1{font-size:21px;margin:0 0 3px}.sub{opacity:.75;font-size:12px}
+main{max-width:720px;margin:auto;padding:14px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat,.panel{background:white;border:1px solid #e5e7eb;border-radius:15px}.stat{padding:12px;text-align:center}.stat b{display:block;font-size:21px}.stat span,.meta,.small{font-size:11px;color:#6b7280}
+.panel{padding:14px;margin-top:12px}.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+button{border:0;border-radius:9px;padding:9px 11px;font-weight:650}button.secondary{background:#eef0f3}.danger{background:#fee2e2;color:#991b1b}
+input{width:65px;padding:8px;border:1px solid #ddd;border-radius:8px}.subject{border-top:1px solid #eee;padding:14px 0}.subject:first-child{border-top:0}
+.title{font-weight:750}.progress{height:7px;background:#edf0f3;border-radius:99px;margin:8px 0}.bar{height:100%;background:#111827;border-radius:99px}
+.lectures{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.lecture{background:#f1f3f5;border:1px solid #e5e7eb}.lecture.done{background:#dcfce7;color:#166534;text-decoration:line-through}
+footer{text-align:center;color:#777;font-size:11px;padding:15px}
+</style></head>
+<body>
+<header><h1>GATE 2027 • Lecture Tracker</h1><div class="sub">373 lectures • Aug 11 → Sep 30</div></header>
+<main>
+<section class="stats"><div class="stat"><b id="done">0</b><span>completed</span></div><div class="stat"><b id="left">373</b><span>remaining</span></div><div class="stat"><b id="pct">0%</b><span>overall</span></div></section>
+<section class="panel"><div class="row"><b>Today</b><button class="secondary" onclick="resetToday()">Reset today's marks</button></div>
+<div class="small" id="today"></div><div style="margin-top:9px"><label class="small">Daily target </label><input id="target" type="number" min="1" max="20" value="8" onchange="saveTarget()"> <span class="small" id="todayCount"></span></div></section>
+<section class="panel"><div class="row"><b>Subjects</b><button class="danger" onclick="resetAll()">Reset all</button></div><div id="subjects"></div></section>
+<footer>Progress is saved on this device. No account required.</footer>
+</main>
+<script>
+const SUBJECTS=[{"name": "Computer Networks", "count": 49}, {"name": "Operating Systems", "count": 44}, {"name": "DBMS", "count": 40}, {"name": "C + Data Structures + Algorithms", "count": 40}, {"name": "Theory of Computation", "count": 40}, {"name": "Compiler Design", "count": 40}, {"name": "Digital Logic", "count": 40}, {"name": "Computer Organization & Architecture", "count": 40}, {"name": "Discrete Mathematics", "count": 40}, {"name": "Engineering Mathematics + Aptitude", "count": 40}];
+const KEY="gateTrackerV1", TARGET="gateTrackerTarget";
+let state=JSON.parse(localStorage.getItem(KEY)||"{}"), target=Number(localStorage.getItem(TARGET)||8);
+const k=(s,l)=>s+"-"+l;
+function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}
+function saveTarget(){target=Math.max(1,Math.min(20,Number(document.getElementById("target").value)||8));localStorage.setItem(TARGET,target);render()}
+function toggle(s,l){let x=k(s,l);let was=!!state[x];state[x]=!was;
+let d=new Date().toISOString().slice(0,10), dk="gateDay-"+d, a=JSON.parse(localStorage.getItem(dk)||"[]");
+if(!was&&!a.includes(x))a.push(x);if(was)a=a.filter(y=>y!==x);localStorage.setItem(dk,JSON.stringify(a));save()}
+function render(){
+let total=0,done=0;SUBJECTS.forEach((s,i)=>{total+=s.count;for(let l=1;l<=s.count;l++)if(state[k(i,l)])done++});
+document.getElementById("done").textContent=done;document.getElementById("left").textContent=total-done;
+document.getElementById("pct").textContent=Math.round(done/total*100)+"%";document.getElementById("target").value=target;
+let now=new Date();document.getElementById("today").textContent=now.toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric",year:"numeric"});
+let dk="gateDay-"+now.toISOString().slice(0,10),a=JSON.parse(localStorage.getItem(dk)||"[]");
+document.getElementById("todayCount").textContent=a.filter(x=>state[x]).length+" / "+target+" today";
+let box=document.getElementById("subjects");box.innerHTML="";
+SUBJECTS.forEach((s,i)=>{let sd=0;for(let l=1;l<=s.count;l++)if(state[k(i,l)])sd++;let p=Math.round(sd/s.count*100);
+let div=document.createElement("div");div.className="subject";
+div.innerHTML='<div class="row"><div><div class="title">'+s.name+'</div><div class="meta">'+sd+' / '+s.count+' completed • '+(s.count-sd)+' left</div></div><b>'+p+'%</b></div><div class="progress"><div class="bar" style="width:'+p+'%"></div></div><div class="lectures" id="l'+i+'"></div>';
+box.appendChild(div);let grid=div.querySelector("#l"+i);
+for(let l=1;l<=s.count;l++){let b=document.createElement("button");b.className="lecture"+(state[k(i,l)]?" done":"");b.textContent=l;b.onclick=()=>toggle(i,l);grid.appendChild(b)}})}
+function resetToday(){let d=new Date().toISOString().slice(0,10),dk="gateDay-"+d,a=JSON.parse(localStorage.getItem(dk)||"[]");a.forEach(x=>delete state[x]);localStorage.removeItem(dk);save()}
+function resetAll(){if(confirm("Reset all 373 lecture checkmarks?")){state={};localStorage.removeItem(KEY);render()}}
+render();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script></body></html>
